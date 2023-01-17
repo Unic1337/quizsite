@@ -5,13 +5,15 @@ from rest_framework import routers
 
 from quiz.views import *
 from quizsite import settings
-
+from user.views import UserInfoAPI
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/quiz/', QuizAPIList.as_view()),
     path('api/quiz/<int:pk>/', QuizAPIUpdate.as_view()),
     path('api/quizdelete/<int:pk>/', QuizAPIDestroy.as_view()),
+    path('api/quizresult/', QuizResultAPIList.as_view()),
+    path('api/userinfo/<int:pk>/', UserInfoAPI.as_view()),
     path('api/auth/', include('djoser.urls')),
     re_path('api/auth/', include('djoser.urls.authtoken'))
 ]

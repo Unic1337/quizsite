@@ -1,8 +1,8 @@
-from django.contrib.auth.models import User
-from rest_framework import serializers
-from rest_framework.validators import UniqueValidator
+from rest_framework import serializers, status
+from rest_framework.response import Response
+from rest_framework.settings import api_settings
 
-from .models import Quiz
+from .models import Quiz, QuizResult
 
 
 class QuizSerializer(serializers.ModelSerializer):
@@ -10,36 +10,11 @@ class QuizSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Quiz
+        fields = ("id", "title", "creator", "quiz_img_url", "creation_time", "change_time", "questions")
+
+
+class QuizResultSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = QuizResult
         fields = '__all__'
-
-
-
-
-
-
-
-
-
-
-
-
-
-# class UserSerializer(serializers.ModelSerializer):
-#     email = serializers.EmailField(
-#             required=False,
-#             default=None,
-#             validators=[UniqueValidator(queryset=User.objects.all())]
-#             )
-#     username = serializers.CharField(
-#             max_length=32,
-#             validators=[UniqueValidator(queryset=User.objects.all())]
-#             )
-#     password = serializers.CharField(min_length=8, write_only=True)
-#
-#     def create(self, validated_data):
-#         user = User.objects.create_user(validated_data['username'], validated_data['email'], validated_data['password'])
-#         return user
-#
-#     class Meta:
-#         model = User
-#         fields = ('id', 'email', 'username', 'password')
