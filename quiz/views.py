@@ -37,7 +37,7 @@ class QuizResultAPIList(generics.ListCreateAPIView):
         self.create_result(serializer.validated_data)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
-        return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
+        return Response(serializer.data["quiz_result"], status=status.HTTP_201_CREATED, headers=headers)
 
     def perform_create(self, serializer):
         serializer.save()
@@ -57,7 +57,8 @@ class QuizResultAPIList(generics.ListCreateAPIView):
             try:
                 if user_answers[str(i)] == correct_answers[str(i)]:
                     quiz_result["final_result"] += 1
-                quiz_result.get("answers_results").update({i: user_answers[str(i)] == correct_answers[str(i)]})
+                quiz_result.get("answers_results").update({i: [user_answers[str(i)],
+                                                               user_answers[str(i)] == correct_answers[str(i)]]})
             except IndexError:
                 pass
 

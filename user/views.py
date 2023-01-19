@@ -18,17 +18,13 @@ class UserInfoAPI(RetrieveAPIView):
         profile = {"profile": serializer.data}
         user_id = profile["profile"]["id"]
 
-        created_quizzes = {}
-        i = 0
+        created_quizzes = []
         for quiz in Quiz.objects.filter(creator_id=user_id):
-            created_quizzes.update({i: QuizSerializer(quiz).data})
-            i += 1
+            created_quizzes.append(QuizSerializer(quiz).data)
 
-        i = 0
-        completed_quizzes = {}
+        completed_quizzes = []
         for result in QuizResult.objects.filter(user_id=user_id):
-            completed_quizzes.update({i: QuizResultSerializer(result).data})
-            i += 1
+            completed_quizzes.append(QuizResultSerializer(result).data)
 
         profile.update({"created_quizzes": created_quizzes})
         profile.update({"completed_quizzes": completed_quizzes})

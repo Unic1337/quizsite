@@ -17,4 +17,4 @@ class QuizResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = QuizResult
-        fields = '__all__'
+        fields = "__all__"
