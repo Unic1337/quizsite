@@ -15,6 +15,7 @@ class UserInfoAPI(RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
+        print(serializer.data)
         profile = {"profile": serializer.data}
         user_id = profile["profile"]["id"]
 

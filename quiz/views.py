@@ -49,17 +49,14 @@ class QuizResultAPIList(generics.ListCreateAPIView):
             return {}
 
     def create_result(self, data):
-        correct_answers = {str(question.get("id")): question.get("correct") for question in data["quiz_id"].questions}
+        correct_answers = [question["correct"] for question in data["quiz_id"].questions]
         user_answers = data.get("quiz_result")
-        quiz_result = {"final_result": 0, "answers_results": {}}
+        quiz_result = {"final_result": 0, "answers_results": []}
 
-        for i in range(1, len(correct_answers)+1):
-            try:
-                if user_answers[str(i)] == correct_answers[str(i)]:
-                    quiz_result["final_result"] += 1
-                quiz_result.get("answers_results").update({i: [user_answers[str(i)],
-                                                               user_answers[str(i)] == correct_answers[str(i)]]})
-            except IndexError:
-                pass
+        for i in range(0, len(user_answers)):
+            if user_answers[i] == correct_answers[i]:
+                quiz_result["final_result"] += 1
+            quiz_result["answers_results"].append([user_answers[str(i)], user_answers[i] == correct_answers[i]])
 
+        data['final_result'] /= len(correct_answers)
         data["quiz_result"] = quiz_result
