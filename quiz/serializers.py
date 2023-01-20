@@ -1,6 +1,4 @@
 from rest_framework import serializers, status
-from rest_framework.response import Response
-from rest_framework.settings import api_settings
 
 from .models import Quiz, QuizResult
 
@@ -17,4 +15,4 @@ class QuizResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = QuizResult
-        fields = "__all__"
+        fields = ("user_id", "quiz_id", "creation_time", "quiz_result")

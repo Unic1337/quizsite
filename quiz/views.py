@@ -19,6 +19,16 @@ class QuizAPIUpdate(generics.RetrieveUpdateAPIView):
     serializer_class = QuizSerializer
     permission_classes = (IsOwnerOrReadOnly,)
 
+    def retrieve(self, request, *args, **kwargs):
+        instance = self.get_object()
+        serializer = self.get_serializer(instance)
+        quiz = serializer.data
+        quiz["quiz_results"] = []
+
+        for result in QuizResult.objects.filter(quiz_id=instance.id):
+            quiz["quiz_results"].append(QuizResultSerializer(result).data)
+        return Response(quiz)
+
 
 class QuizAPIDestroy(generics.RetrieveDestroyAPIView):
     queryset = Quiz.objects.all()
@@ -56,7 +66,7 @@ class QuizResultAPIList(generics.ListCreateAPIView):
         for i in range(0, len(user_answers)):
             if user_answers[i] == correct_answers[i]:
                 quiz_result["final_result"] += 1
-            quiz_result["answers_results"].append([user_answers[str(i)], user_answers[i] == correct_answers[i]])
+            quiz_result["answers_results"].append([user_answers[i], user_answers[i] == correct_answers[i]])
 
-        data['final_result'] /= len(correct_answers)
+        quiz_result['final_result'] /= len(correct_answers)
         data["quiz_result"] = quiz_result
