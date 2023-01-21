@@ -39,12 +39,15 @@ class QuizAPIDestroy(generics.RetrieveDestroyAPIView):
 class QuizResultAPIList(generics.ListCreateAPIView):
     queryset = QuizResult.objects.all()
     serializer_class = QuizResultSerializer
-    permission_classes = (IsAuthenticated, )
+    permission_classes = (AllowAny, )
 
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.create_result(serializer.validated_data)
+        if not serializer.validated_data.get("user_id", None):
+            headers = self.get_success_headers(serializer.data)
+            return Response(serializer.data["quiz_result"], status=status.HTTP_200_OK, headers=headers)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data["quiz_result"], status=status.HTTP_201_CREATED, headers=headers)
@@ -64,9 +67,13 @@ class QuizResultAPIList(generics.ListCreateAPIView):
         quiz_result = {"final_result": 0, "answers_results": []}
 
         for i in range(0, len(user_answers)):
-            if user_answers[i] == correct_answers[i]:
-                quiz_result["final_result"] += 1
-            quiz_result["answers_results"].append([user_answers[i], user_answers[i] == correct_answers[i]])
+            try:
+                if user_answers[i] == correct_answers[i]:
+                    quiz_result["final_result"] += 1
+                quiz_result["answers_results"].append([user_answers[i], user_answers[i] == correct_answers[i]])
+            except KeyError:
+                data.update({"quiz_result": {"error": "некорректный формат ответов"}})
+                return
 
-        quiz_result['final_result'] /= len(correct_answers)
+        quiz_result['final_result'] = quiz_result['final_result'] / len(correct_answers) * 100
         data["quiz_result"] = quiz_result

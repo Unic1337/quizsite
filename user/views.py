@@ -8,7 +8,7 @@ from user.models import Profile
 from user.serializers import ProfileSerializer
 
 
-class UserInfoAPI(RetrieveAPIView):
+class UserInfoAPIRetrieve(RetrieveAPIView):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
 
@@ -21,12 +21,13 @@ class UserInfoAPI(RetrieveAPIView):
         created_quizzes = []
         for quiz in Quiz.objects.filter(creator_id=user_id):
             quiz = QuizSerializer(quiz).data
-            quiz["quiz_img_url"] = DOMAIN + quiz["quiz_img_url"]
+            if quiz["quiz_img_url"]:
+                quiz["quiz_img_url"] = DOMAIN + quiz["quiz_img_url"]
             created_quizzes.append(quiz)
 
         completed_quizzes = []
         for result in QuizResult.objects.filter(user_id=user_id):
-            completed_quizzes.append(QuizResultSerializer(result).data["quiz_result"])
+            completed_quizzes.append(QuizResultSerializer(result).data)
 
         profile.update({"created_quizzes": created_quizzes})
         profile.update({"completed_quizzes": completed_quizzes})
