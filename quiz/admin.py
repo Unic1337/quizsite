@@ -1,6 +1,6 @@
 from django.contrib import admin
 from user.models import Profile
-from .models import Quiz
+from .models import Quiz, QuizResult
 
 
 class QuizAdmin(admin.ModelAdmin):
@@ -8,4 +8,4 @@ class QuizAdmin(admin.ModelAdmin):
 
 
 admin.site.register(Quiz, QuizAdmin)
-admin.site.register(Profile)
+admin.site.register(QuizResult)

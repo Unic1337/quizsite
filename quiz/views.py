@@ -6,6 +6,8 @@ from rest_framework.settings import api_settings
 from quiz.models import Quiz, QuizResult
 from quiz.permissions import IsOwnerOrReadOnly
 from quiz.serializers import QuizSerializer, QuizResultSerializer
+from user.models import Profile
+from user.serializers import ProfileSerializer
 
 
 class QuizAPIList(generics.ListCreateAPIView):
@@ -14,7 +16,7 @@ class QuizAPIList(generics.ListCreateAPIView):
     permission_classes = (IsAuthenticatedOrReadOnly, )
 
 
-class QuizAPIUpdate(generics.RetrieveUpdateAPIView):
+class QuizAPIRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
     queryset = Quiz.objects.all()
     serializer_class = QuizSerializer
     permission_classes = (IsOwnerOrReadOnly,)
@@ -26,14 +28,11 @@ class QuizAPIUpdate(generics.RetrieveUpdateAPIView):
         quiz["quiz_results"] = []
 
         for result in QuizResult.objects.filter(quiz_id=instance.id):
-            quiz["quiz_results"].append(QuizResultSerializer(result).data)
+            result = QuizResultSerializer(result).data
+            user = ProfileSerializer(Profile.objects.get(pk=result["user_id"])).data
+            result.update({"username": user["username"]})
+            quiz["quiz_results"].append(result)
         return Response(quiz)
-
-
-class QuizAPIDestroy(generics.RetrieveDestroyAPIView):
-    queryset = Quiz.objects.all()
-    serializer_class = QuizSerializer
-    permission_classes = (IsOwnerOrReadOnly,)
 
 
 class QuizResultAPIList(generics.ListCreateAPIView):
