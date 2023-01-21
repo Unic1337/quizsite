@@ -1,6 +1,7 @@
-from rest_framework.generics import RetrieveAPIView
+from rest_framework.generics import RetrieveUpdateAPIView
 from rest_framework.response import Response
 
+from quiz.permissions import IsProfileOwner
 from quizsite.settings import DOMAIN
 from quiz.models import Quiz, QuizResult
 from quiz.serializers import QuizSerializer, QuizResultSerializer
@@ -8,9 +9,10 @@ from user.models import Profile
 from user.serializers import ProfileSerializer
 
 
-class UserInfoAPIRetrieve(RetrieveAPIView):
+class UserInfoAPIRetrieve(RetrieveUpdateAPIView):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
+    permission_classes = (IsProfileOwner, )
 
     def retrieve(self, request, *args, **kwargs):
         instance = self.get_object()
