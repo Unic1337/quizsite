@@ -10,7 +10,7 @@ class Profile(AbstractUser):
 
 
 class Follow(models.Model):
-    tracking_user = models.ForeignKey(Profile, related_name='tracking_user_article_set', on_delete=models.CASCADE)
-    tracked_user = models.ForeignKey(Profile, related_name='tracked_user_article_set', on_delete=models.CASCADE)
+    user_is_following = models.ForeignKey(Profile, null=True, related_name='following_article_set', on_delete=models.CASCADE)
+    user_is_being_followed = models.ForeignKey(Profile, related_name='followed_article_set', on_delete=models.CASCADE)
     creation_time = models.DateTimeField(auto_now_add=True)
-    is_friends = models.BooleanField(blank=True, null=True)
+    is_friends = models.BooleanField(blank=True, default=False)

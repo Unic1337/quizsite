@@ -1,7 +1,6 @@
 from rest_framework import status
-from rest_framework.mixins import UpdateModelMixin
 from rest_framework.permissions import *
-from rest_framework.generics import RetrieveUpdateAPIView, RetrieveDestroyAPIView, ListCreateAPIView
+from rest_framework.generics import RetrieveUpdateAPIView, GenericAPIView, DestroyAPIView, CreateAPIView
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
@@ -38,25 +37,31 @@ class UserInfoAPIRetrieve(RetrieveUpdateAPIView):
             result.update({'quiz_name': QuizSerializer(quiz).data['title']})
             completed_quizzes.append(result)
 
+        following = []
         followers = []
         friends = []
-        for follow in Follow.objects.filter(tracked_user=user_id):
-            follow = FollowSerializer(follow).data
-            follower = Profile.objects.get(pk=follow["tracking_user"])
-            if follow['is_friends']:
-                friends.append([ProfileSerializer(follower).data])
+        for follow in Follow.objects.filter(user_is_following=user_id):
+            user_is_being_followed = Profile.objects.get(pk=follow.user_is_being_followed.id)
+            if follow.is_friends:
+                friends.append(ProfileSerializer(user_is_being_followed).data)
             else:
-                followers.append([ProfileSerializer(follower).data])
+                following.append(ProfileSerializer(user_is_being_followed).data)
+
+        for follow in Follow.objects.filter(user_is_being_followed=user_id):
+            user_is_following = Profile.objects.get(pk=follow.user_is_following.id)
+            if not follow.is_friends:
+                followers.append(ProfileSerializer(user_is_following).data)
 
         profile.update({"created_quizzes": created_quizzes})
         profile.update({"completed_quizzes": completed_quizzes})
+        profile.update({"following": following})
         profile.update({"followers": followers})
         profile.update({"friends": friends})
 
         return Response(profile)
 
 
-class FollowAPIView(ListCreateAPIView):
+class FollowAPIView(CreateAPIView, DestroyAPIView):
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated, )
@@ -64,10 +69,10 @@ class FollowAPIView(ListCreateAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        instance = self.create_relation(serializer.validated_data)
-        if not instance:
+        instance = self.create_relation(serializer.validated_data, request._user)
+        if instance.get('error', False):
             headers = self.get_success_headers(serializer.validated_data)
-            return Response({'error': 'already following'}, status=status.HTTP_400_BAD_REQUEST, headers=headers)
+            return Response(instance, status=status.HTTP_400_BAD_REQUEST, headers=headers)
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)
@@ -81,13 +86,38 @@ class FollowAPIView(ListCreateAPIView):
         except (TypeError, KeyError):
             return {}
 
-    def create_relation(self, data):
-        if Follow.objects.filter(tracked_user=data['tracked_user'], tracking_user=data['tracking_user']).exists():
-            return False
+    def destroy(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user_is_following = request._user.id
+        user_is_being_followed = serializer.data['user_is_being_followed']
+        instance = Follow.objects.get(user_is_following=user_is_following, user_is_being_followed_id=user_is_being_followed)
 
-        if Follow.objects.filter(tracked_user=data['tracking_user'], tracking_user=data['tracked_user']).exists():
+        if Follow.objects.filter(user_is_following=user_is_being_followed, user_is_being_followed_id=user_is_following).exists():
+            friend = Follow.objects.get(user_is_following=user_is_being_followed, user_is_being_followed_id=user_is_following)
+            self.update(friend, is_friends=False)
+
+        self.perform_destroy(instance)
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+    def perform_destroy(self, instance):
+        instance.delete()
+
+    def create_relation(self, data, user_is_following):
+        user_is_being_followed = data['user_is_being_followed']
+        data['user_is_following'] = user_is_following
+
+        if Follow.objects.filter(user_is_following=user_is_following.id, user_is_being_followed=user_is_being_followed.id).exists():
+            data = {'error': 'already following'}
+            return data
+
+        if user_is_following == user_is_being_followed:
+            data = {'error': 'cant follow yourself'}
+            return data
+
+        if Follow.objects.filter(user_is_being_followed=user_is_following.id, user_is_following=user_is_being_followed.id).exists():
             data.update({'is_friends': True})
-            friend = Follow.objects.get(tracked_user=data['tracking_user'], tracking_user=data['tracked_user'])
+            friend = Follow.objects.get(user_is_being_followed=user_is_following.id, user_is_following=user_is_being_followed.id)
             self.update(friend, is_friends=True)
 
         return data

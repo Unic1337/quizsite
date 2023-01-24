@@ -13,7 +13,7 @@ urlpatterns = [
     path('api/quiz/<int:pk>/', QuizAPIRetrieveUpdateDestroy.as_view()),
     path('api/quizresult/', QuizResultAPIList.as_view()),
     path('api/follow/', FollowAPIView.as_view()),
-    path('api/auth/users/<int:pk>/', UserInfoAPIRetrieve.as_view()),
+    path('api/auth/users/', UserInfoAPIRetrieve.as_view()),
     path('api/auth/', include('djoser.urls')),
     re_path('api/auth/', include('djoser.urls.authtoken'))
 ]
