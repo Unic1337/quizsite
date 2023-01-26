@@ -28,8 +28,8 @@ class QuizAPIRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         quiz["quiz_results"] = []
 
         for result in QuizResult.objects.filter(quiz_id=instance.id):
+            user = ProfileSerializer(result.user_id).data
             result = QuizResultSerializer(result).data
-            user = ProfileSerializer(Profile.objects.get(pk=result["user_id"])).data
             result.update({"username": user["username"]})
             quiz["quiz_results"].append(result)
         return Response(quiz)
