@@ -18,24 +18,23 @@ class UserInfoAPIRetrieve(generics.RetrieveUpdateAPIView):
     permission_classes = (AllowAny, )
 
     def retrieve(self, request, *args, **kwargs):
-        ###
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         profile = {"profile": serializer.data}
         user_id = profile["profile"]["id"]
-        ###
+
         created_quizzes = []
         for quiz in Quiz.objects.filter(creator_id=user_id):
             quiz = QuizSerializer(quiz).data
-            if quiz["quiz_img_url"]:
-                quiz["quiz_img_url"] = DOMAIN + quiz["quiz_img_url"]
+            if quiz.get("quiz_img_url", False):
+                quiz["quiz_img_url"] = DOMAIN + quiz.get("quiz_img_url")
             created_quizzes.append(quiz)
 
         completed_quizzes = []
         for result in QuizResult.objects.filter(user_id=user_id):
-            quiz = QuizSerializer(result.quiz_id).data['title']
+            quiz = QuizSerializer(result.quiz_id).data
             result = QuizResultSerializer(result).data
-            result.update({'quiz_name': quiz})
+            result.update({'quiz_name': quiz.get('title')})
             completed_quizzes.append(result)
 
         following = []
@@ -66,14 +65,17 @@ class FollowAPIView(generics.CreateAPIView, generics.DestroyAPIView):
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated, )
-    #переписать пермишн
+    #переписать пермишн модель и сериалайзер(сделать в нем не обязательным ид кто добавляет)
+
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         instance = self.create_relation(serializer.validated_data, request._user)
+
         if instance.get('error', False):
             headers = self.get_success_headers(serializer.validated_data)
             return Response(instance, status=status.HTTP_400_BAD_REQUEST, headers=headers)
+
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data, status=status.HTTP_201_CREATED, headers=headers)

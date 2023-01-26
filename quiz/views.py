@@ -25,8 +25,8 @@ class QuizAPIRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         quiz = serializer.data
-        quiz["quiz_results"] = []
 
+        quiz["quiz_results"] = []
         for result in QuizResult.objects.filter(quiz_id=instance.id):
             user = ProfileSerializer(result.user_id).data
             result = QuizResultSerializer(result).data
@@ -60,12 +60,15 @@ class QuizResultAPIList(generics.ListCreateAPIView):
     permission_classes = (AllowAny, )
 
     def create(self, request, *args, **kwargs):
+        #сделать айди юзера автоматически по юзеру в request
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.create_result(serializer.validated_data)
+
         if not serializer.validated_data.get("user_id", None):
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data["quiz_result"], status=status.HTTP_200_OK, headers=headers)
+
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data["quiz_result"], status=status.HTTP_201_CREATED, headers=headers)
@@ -80,10 +83,10 @@ class QuizResultAPIList(generics.ListCreateAPIView):
             return {}
 
     def create_result(self, data):
-        correct_answers = [question["correct"] for question in data["quiz_id"].questions]
-        user_answers = data.get("quiz_result")
+        correct_answers = [question.get("correct") for question in data["quiz_id"].questions]
+        correct_answers = [x.lower() if not isinstance(x, list) else [y.lower() for y in x] for x in correct_answers]
+        user_answers = [x.lower() if not isinstance(x, list) else [y.lower() for y in x] for x in data.get("quiz_result").values()]
         quiz_result = {"final_result": 0, "answers_results": []}
-
         for i in range(0, len(user_answers)):
             try:
                 if user_answers[i] == correct_answers[i]:
