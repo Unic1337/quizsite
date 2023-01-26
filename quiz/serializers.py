@@ -15,4 +15,4 @@ class QuizResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = QuizResult
-        fields = ("user_id", "quiz_id", "creation_time", "quiz_result")
+        fields = ("quiz_id", "creation_time", "quiz_result")

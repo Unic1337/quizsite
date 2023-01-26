@@ -1,6 +1,5 @@
-from rest_framework import status
+from rest_framework import status, generics
 from rest_framework.permissions import *
-from rest_framework.generics import RetrieveUpdateAPIView, GenericAPIView, DestroyAPIView, CreateAPIView
 from rest_framework.response import Response
 from rest_framework.settings import api_settings
 
@@ -12,17 +11,19 @@ from user.models import Profile, Follow
 from user.serializers import ProfileSerializer, FollowSerializer
 
 
-class UserInfoAPIRetrieve(RetrieveUpdateAPIView):
+class UserInfoAPIRetrieve(generics.RetrieveUpdateAPIView):
     queryset = Profile.objects.all()
     serializer_class = ProfileSerializer
-    permission_classes = (IsProfileOwner, )
+    #permission_classes = (IsProfileOwner, )
+    permission_classes = (AllowAny, )
 
     def retrieve(self, request, *args, **kwargs):
+        ###
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         profile = {"profile": serializer.data}
         user_id = profile["profile"]["id"]
-
+        ###
         created_quizzes = []
         for quiz in Quiz.objects.filter(creator_id=user_id):
             quiz = QuizSerializer(quiz).data
@@ -32,23 +33,23 @@ class UserInfoAPIRetrieve(RetrieveUpdateAPIView):
 
         completed_quizzes = []
         for result in QuizResult.objects.filter(user_id=user_id):
+            quiz = QuizSerializer(result.quiz_id).data['title']
             result = QuizResultSerializer(result).data
-            quiz = Quiz.objects.get(pk=result.get('quiz_id'))
-            result.update({'quiz_name': QuizSerializer(quiz).data['title']})
+            result.update({'quiz_name': quiz})
             completed_quizzes.append(result)
 
         following = []
         followers = []
         friends = []
         for follow in Follow.objects.filter(user_is_following=user_id):
-            user_is_being_followed = Profile.objects.get(pk=follow.user_is_being_followed.id)
+            user_is_being_followed = follow.user_is_being_followed
             if follow.is_friends:
                 friends.append(ProfileSerializer(user_is_being_followed).data)
             else:
                 following.append(ProfileSerializer(user_is_being_followed).data)
 
         for follow in Follow.objects.filter(user_is_being_followed=user_id):
-            user_is_following = Profile.objects.get(pk=follow.user_is_following.id)
+            user_is_following = follow.user_is_following
             if not follow.is_friends:
                 followers.append(ProfileSerializer(user_is_following).data)
 
@@ -61,11 +62,11 @@ class UserInfoAPIRetrieve(RetrieveUpdateAPIView):
         return Response(profile)
 
 
-class FollowAPIView(CreateAPIView, DestroyAPIView):
+class FollowAPIView(generics.CreateAPIView, generics.DestroyAPIView):
     queryset = Follow.objects.all()
     serializer_class = FollowSerializer
     permission_classes = (IsAuthenticated, )
-
+    #переписать пермишн
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
