@@ -1,3 +1,5 @@
+from user.models import Profile
+
 from rest_framework import serializers, status
 
 from .models import Quiz, QuizResult

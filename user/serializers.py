@@ -11,6 +11,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 
 class FollowSerializer(serializers.ModelSerializer):
+    user_is_following = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = Follow

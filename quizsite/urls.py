@@ -7,6 +7,9 @@ from quiz.views import *
 from quizsite import settings
 from user.views import UserInfoAPIRetrieve, FollowAPIView
 
+# quiz_router = routers.SimpleRouter()
+# quiz_router.register(r'quiz', )
+
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/quiz/', QuizAPIList.as_view()),

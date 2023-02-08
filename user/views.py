@@ -70,7 +70,8 @@ class FollowAPIView(generics.CreateAPIView, generics.DestroyAPIView):
     def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
-        instance = self.create_relation(serializer.validated_data, request._user)
+        instance = self.create_relation(serializer.validated_data)
+
 
         if instance.get('error', False):
             headers = self.get_success_headers(serializer.validated_data)
