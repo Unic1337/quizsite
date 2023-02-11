@@ -25,14 +25,34 @@ class QuizAPIRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         instance = self.get_object()
         serializer = self.get_serializer(instance)
         quiz = serializer.data
-        quiz["quiz_results"] = []
 
-        for result in QuizResult.objects.filter(quiz_id=instance.id):
+        quiz["quiz_results"] = []
+        for result in instance.quizresult_set.all().select_related("user_id"):
+            username = result.user_id.username
             result = QuizResultSerializer(result).data
-            user = ProfileSerializer(Profile.objects.get(pk=result["user_id"])).data
-            result.update({"username": user["username"]})
+            result.update({"username": username})
             quiz["quiz_results"].append(result)
+
         return Response(quiz)
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop('partial', False)
+        instance = self.get_object()
+        serializer = self.get_serializer(instance, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        if getattr(instance, '_prefetched_objects_cache', None):
+            instance._prefetched_objects_cache = {}
+
+        return Response(serializer.data)
+
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def partial_update(self, request, *args, **kwargs):
+        kwargs['partial'] = True
+        return self.update(request, *args, **kwargs)
 
 
 class QuizResultAPIList(generics.ListCreateAPIView):
@@ -44,9 +64,12 @@ class QuizResultAPIList(generics.ListCreateAPIView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         self.create_result(serializer.validated_data)
-        if not serializer.validated_data.get("user_id", None):
+
+        if not request._user.id:
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data["quiz_result"], status=status.HTTP_200_OK, headers=headers)
+
+        serializer.validated_data.update({"user_id": request._user})
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data["quiz_result"], status=status.HTTP_201_CREATED, headers=headers)
@@ -60,19 +83,27 @@ class QuizResultAPIList(generics.ListCreateAPIView):
         except (TypeError, KeyError):
             return {}
 
-    def create_result(self, data):
-        correct_answers = [question["correct"] for question in data["quiz_id"].questions]
-        user_answers = data.get("quiz_result")
-        quiz_result = {"final_result": 0, "answers_results": []}
+    def make_lower_register(self, arr):
+        if isinstance(arr, list):
+            return [i.lower() if not isinstance(i, list) else [j.lower() for j in i] for i in arr]
+        return arr
 
-        for i in range(0, len(user_answers)):
-            try:
+    def create_result(self, data):
+        quiz = data["quiz_id"]
+        result = data.get("quiz_result")
+        correct_answers = [question.get("correct") for question in quiz.questions]
+        correct_answers = self.make_lower_register(correct_answers)
+        user_answers = self.make_lower_register(result)
+
+        quiz_result = {"final_result": 0, "answers_results": []}
+        try:
+            for i in range(len(user_answers)):
                 if user_answers[i] == correct_answers[i]:
                     quiz_result["final_result"] += 1
                 quiz_result["answers_results"].append([user_answers[i], user_answers[i] == correct_answers[i]])
-            except KeyError:
-                data.update({"quiz_result": {"error": "некорректный формат ответов"}})
-                return
+        except [IndexError, TypeError]:
+            data.update({"quiz_result": {"error": "некорректный формат ответов"}})
+            return
 
         quiz_result['final_result'] = quiz_result['final_result'] / len(correct_answers) * 100
         data["quiz_result"] = quiz_result

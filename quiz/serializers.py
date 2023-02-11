@@ -1,3 +1,5 @@
+from user.models import Profile
+
 from rest_framework import serializers, status
 
 from .models import Quiz, QuizResult
@@ -15,4 +17,4 @@ class QuizResultSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = QuizResult
-        fields = ("user_id", "quiz_id", "creation_time", "quiz_result")
+        fields = ("quiz_id", "creation_time", "quiz_result")

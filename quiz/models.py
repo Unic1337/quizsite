@@ -21,7 +21,7 @@ class Quiz(models.Model):
 
 
 class QuizResult(models.Model):
-    user_id = models.ForeignKey(Profile, null=True, on_delete=models.CASCADE)
+    user_id = models.ForeignKey(Profile, on_delete=models.CASCADE)
     quiz_id = models.ForeignKey(Quiz, on_delete=models.CASCADE)
     quiz_result = models.JSONField()
     creation_time = models.DateTimeField(auto_now_add=True)

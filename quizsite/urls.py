@@ -1,20 +1,17 @@
 from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import path, include, re_path
-from rest_framework import routers
 
-from quiz.views import *
 from quizsite import settings
-from user.views import UserInfoAPIRetrieve
+
 
 urlpatterns = [
     path('admin/', admin.site.urls),
-    path('api/quiz/', QuizAPIList.as_view()),
-    path('api/quiz/<int:pk>/', QuizAPIRetrieveUpdateDestroy.as_view()),
-    path('api/quizresult/', QuizResultAPIList.as_view()),
-    path('api/auth/users/<int:pk>/', UserInfoAPIRetrieve.as_view()),
+    path('api/', include('quiz.urls')),
+    path('api/', include('user.urls')),
     path('api/auth/', include('djoser.urls')),
-    re_path('api/auth/', include('djoser.urls.authtoken'))
+    re_path('api/auth/', include('djoser.urls.authtoken')),
+    path('__debug__/', include('debug_toolbar.urls')),
 ]
 
 if settings.DEBUG:

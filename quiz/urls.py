@@ -1,8 +1,8 @@
-# from os import path
-#
-# from django.template.defaulttags import url
-# from . import views
-#
-# urlpatterns = [
-#     path('api/users^$', views.RegisterUser.as_view()),
-# ]
+from django.urls import path
+from quiz.views import *
+
+urlpatterns = [
+    path('quiz/', QuizAPIList.as_view(), name='get_quizzes'),
+    path('quiz/<int:pk>/', QuizAPIRetrieveUpdateDestroy.as_view()),
+    path('quizresult/', QuizResultAPIList.as_view()),
+]
