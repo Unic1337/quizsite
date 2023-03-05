@@ -27,17 +27,10 @@ class QuizAPIRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
         quiz = serializer.data
 
         quiz["quiz_results"] = []
-<<<<<<< HEAD
         for result in instance.quizresult_set.all().select_related("user_id"):
             username = result.user_id.username
             result = QuizResultSerializer(result).data
             result.update({"username": username})
-=======
-        for result in request._user.quizresult_set.all():
-            user = result.user_id
-            result = QuizResultSerializer(result).data
-            result.update({"username": user.username})
->>>>>>> f878692612f0864d305775c963d16d14f3e04169
             quiz["quiz_results"].append(result)
 
         return Response(quiz)
