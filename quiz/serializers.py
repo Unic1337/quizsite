@@ -1,6 +1,4 @@
-from user.models import Profile
-
-from rest_framework import serializers, status
+from rest_framework import serializers
 
 from .models import Quiz, QuizResult
 
@@ -10,11 +8,12 @@ class QuizSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Quiz
-        fields = ("id", "title", "creator", "quiz_img_url", "creation_time", "change_time", "questions")
+        fields = ("id", "title", "creator", "quiz_img_url", "creation_time", "change_time", "questions",)
 
 
 class QuizResultSerializer(serializers.ModelSerializer):
+    user_id = serializers.HiddenField(default=serializers.CurrentUserDefault())
 
     class Meta:
         model = QuizResult
-        fields = ("quiz_id", "creation_time", "quiz_result")
+        fields = ("user_id", "quiz_id", "creation_time", "quiz_result",)

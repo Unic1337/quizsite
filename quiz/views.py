@@ -1,13 +1,10 @@
 from rest_framework import status, generics
 from rest_framework.permissions import *
 from rest_framework.response import Response
-from rest_framework.settings import api_settings
 
 from quiz.models import Quiz, QuizResult
 from quiz.permissions import IsOwnerOrReadOnly
 from quiz.serializers import QuizSerializer, QuizResultSerializer
-from user.models import Profile
-from user.serializers import ProfileSerializer
 
 
 class QuizAPIList(generics.ListCreateAPIView):
@@ -35,25 +32,6 @@ class QuizAPIRetrieveUpdateDestroy(generics.RetrieveUpdateDestroyAPIView):
 
         return Response(quiz)
 
-    def update(self, request, *args, **kwargs):
-        partial = kwargs.pop('partial', False)
-        instance = self.get_object()
-        serializer = self.get_serializer(instance, data=request.data, partial=partial)
-        serializer.is_valid(raise_exception=True)
-        self.perform_update(serializer)
-
-        if getattr(instance, '_prefetched_objects_cache', None):
-            instance._prefetched_objects_cache = {}
-
-        return Response(serializer.data)
-
-    def perform_update(self, serializer):
-        serializer.save()
-
-    def partial_update(self, request, *args, **kwargs):
-        kwargs['partial'] = True
-        return self.update(request, *args, **kwargs)
-
 
 class QuizResultAPIList(generics.ListCreateAPIView):
     queryset = QuizResult.objects.all()
@@ -65,35 +43,25 @@ class QuizResultAPIList(generics.ListCreateAPIView):
         serializer.is_valid(raise_exception=True)
         self.create_result(serializer.validated_data)
 
-        if not request._user.id:
+        if not serializer.validated_data.get('user_id').id:
             headers = self.get_success_headers(serializer.data)
             return Response(serializer.data["quiz_result"], status=status.HTTP_200_OK, headers=headers)
 
-        serializer.validated_data.update({"user_id": request._user})
         self.perform_create(serializer)
         headers = self.get_success_headers(serializer.data)
         return Response(serializer.data["quiz_result"], status=status.HTTP_201_CREATED, headers=headers)
 
-    def perform_create(self, serializer):
-        serializer.save()
+    @staticmethod
+    def create_result(data):
+        def make_lower_register(arr):
+            if isinstance(arr, list):
+                return [i.lower() if not isinstance(i, list) else [j.lower() for j in i] for i in arr]
+            return arr
 
-    def get_success_headers(self, data):
-        try:
-            return {'Location': str(data[api_settings.URL_FIELD_NAME])}
-        except (TypeError, KeyError):
-            return {}
-
-    def make_lower_register(self, arr):
-        if isinstance(arr, list):
-            return [i.lower() if not isinstance(i, list) else [j.lower() for j in i] for i in arr]
-        return arr
-
-    def create_result(self, data):
-        quiz = data["quiz_id"]
+        quiz = data.get("quiz_id")
         result = data.get("quiz_result")
-        correct_answers = [question.get("correct") for question in quiz.questions]
-        correct_answers = self.make_lower_register(correct_answers)
-        user_answers = self.make_lower_register(result)
+        correct_answers = make_lower_register([question.get("correct") for question in quiz.questions])
+        user_answers = make_lower_register(result)
 
         quiz_result = {"final_result": 0, "answers_results": []}
         try:

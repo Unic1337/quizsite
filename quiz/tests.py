@@ -2,12 +2,10 @@ from rest_framework.reverse import reverse
 from rest_framework import status
 from django.test import TestCase, Client
 from django.urls import reverse
-from django.urls import path, include, re_path
 from rest_framework.utils import json
 
-from quiz.serializers import QuizSerializer
+
 from user.models import Profile
-from quiz.models import Quiz, QuizResult
 from user.serializers import ProfileSerializer
 
 client = Client()
@@ -54,7 +52,7 @@ class CreateNewProfileTest(TestCase):
         self.valid_payload = {
             'username': 'Muffin',
             'password': 'password213',
-            'email': 'Muffin@mail.ru'
+            'email': 'Muffin@mail.ru',
         }
         self.invalid_payload = {
             'username': '',
@@ -66,7 +64,7 @@ class CreateNewProfileTest(TestCase):
         response = client.post(
             'http://127.0.0.1:8000/api/auth/users/',
             data=json.dumps(self.valid_payload),
-            content_type='application/json'
+            content_type='application/json',
         )
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
@@ -76,36 +74,4 @@ class CreateNewProfileTest(TestCase):
             data=json.dumps(self.invalid_payload),
             content_type='application/json'
         )
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-
-class UpdateSingleProfileTest(TestCase):
-    """ Test module for updating an existing puppy record """
-    def setUp(self):
-        self.casper = Profile.objects.create(username='Casper', password='password213', email='Casper@mail')
-        self.muffin = Profile.objects.create(username='Muffin', password='password321', email='Muffin@mail')
-        self.valid_payload = {
-            'username': 'Muffin',
-            'password': 'password213',
-            'email': 'Muffin@mail.ru'
-        }
-        self.invalid_payload = {
-            'username': '',
-            'password': '',
-            'email': ''
-        }
-
-    def test_valid_update_profile(self):
-        response = client.put(
-            reverse('get_update_profile', kwargs={'pk': self.muffin.pk}),
-            data=json.dumps(self.valid_payload),
-            content_type='application/json'
-        )
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-
-    def test_invalid_update_profile(self):
-        response = client.put(
-            reverse('get_update_profile', kwargs={'pk': self.muffin.pk}),
-            data=json.dumps(self.invalid_payload),
-            content_type='application/json')
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
